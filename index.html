@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chessboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            max-width: 90vw;
+            max-height: 90vh;
+            border: 2px solid black;
+        }
+
+        .square-light {
+            background-color: #f0d9b5;
+        }
+
+        .square-dark {
+            background-color: #b58863;
+        }
+
+        .square {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 5vh;
+            /* Adjust the width based on the viewport width */
+            height: 5vh;
+            /* Adjust the height based on the viewport height */
+            font-size: min(3vw, 3vh);
+            /* Adjust font size based on viewport size */
+        }
+
+
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+
+        button {
+            font-size: min(1.5vw, 1.5vh);
+            /* Adjust button font size based on viewport size */
+        }
+    </style>
+</head>
+
+<body>
+    <br>
+    <br>
+    <br>
+    <br>
+    <div>Enter your 8 queens configuration here, use any character for</div>
+    <div>blank space, and "x" for a queen(NO SPACES).</div>
+    <br>
+    <textarea maxlength="64" id="textInput" style="resize: none; font-size:x-large;" name="chessInput" id="chessInput"
+        cols="7" rows="8"></textarea>
+    <p>Characters remaining: <span id="charCount">64</span></p>
+    <button id="submitData" type="submit" class="submit">Submit</button>
+
+
+    <br>
+    <div>h value for this puzzle: <span id="hValue"></span></div>
+    <br>
+    <div class="board">
+
+    </div>
+</body>
+<script src="8Queens.js"></script>
+<script>
+    let node;
+    for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+            node = document.createElement("div");
+            node.classList.add("square");
+            if ((i + j) % 2 === 0) {
+                node.classList.add(`square-light`);
+                node.id = `${i},${j}`
+            } else {
+                node.classList.add(`square-dark`);
+                node.id = `${i},${j}`
+            }
+            document.querySelector(`.board`).appendChild(node);
+        }
+    }
+    const textarea = document.getElementById('textInput');
+    const charCount = document.getElementById('charCount');
+    const submitButton = document.querySelector('#submitData')
+    const hValue = document.querySelector("#hValue");
+
+    textarea.addEventListener('input', function () {
+        const maxLength = parseInt(textarea.getAttribute('maxlength'));
+        const currentLength = textarea.value.length;
+        if (currentLength > maxLength) {
+            textarea.value = textarea.value.slice(0, maxLength);
+        }
+        charCount.textContent = maxLength - textarea.value.length;
+    });
+
+    let boardData = Array.from({ length: 8 }, () => Array(8).fill(''));
+
+    submitButton.addEventListener('click', () => {
+        let i = 0, j = 0, xtotal = 0;
+        let isError = false;
+        let inputContent = textarea.value;
+        console.log(inputContent)
+        for (const char of inputContent) {
+
+            boardData[i][j] = char;
+            j++;
+            if (j % 8 == 0) {
+                i++;
+                j = 0;
+            }
+        }
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                if (boardData[j][i] === "x") {
+                    xtotal++;
+                }
+                if (xtotal >= 2) {
+                    console.log("More than 2 X's in a column")
+                    isError = true;
+                    xtotal = 0
+                    break
+                }
+                if (j == 7) {
+                    xtotal = 0;
+                }
+            }
+        }
+        let hValues = calculateHeuristic(boardData);
+        let attackPairs = calculateAttackPairs(boardData);
+        console.log(hValues)
+        hValue.innerText = attackPairs;
+        console.log(Object.keys(hValues).length)
+        if (isError || inputContent.length !== 64 || Object.keys(hValues).length == 0 || Object.keys(hValues).length !== 56) {
+            console.log(Object.keys(hValues).length)
+            alert("Invalid puzzle configuration");
+
+        }
+        else {
+            for (let i = 0; i < 8; i++) {
+                for (let j = 0; j < 8; j++) {
+                    let square = document.getElementById(`${i},${j}`);
+                    if (boardData[i][j] == "x") {
+                        square.innerHTML = "<span>&#9819;</span>";
+                    }
+                    else {
+                        const key = findKeyWithPattern(hValues, `${i},${j}`);
+                        if (key) {
+                            square.innerText = hValues[key];
+                        }
+                        else {
+                            break
+                            console.log("coordinate: ", key)
+                            console.log("Value: ", hValues[key])
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+
+
+
+
+
+</script>
+
+</html>
